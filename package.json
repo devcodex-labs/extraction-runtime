@@ -1,0 +1,52 @@
+{
+  "name": "@devcodex-labs/extraction-runtime",
+  "version": "0.1.0",
+  "description": "A small, extensible runtime for parsing files and extracting text, metadata, and structured sections.",
+  "type": "module",
+  "license": "MIT",
+  "author": "DevCodex Labs",
+  "homepage": "https://github.com/devcodex-labs/extraction-runtime#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devcodex-labs/extraction-runtime.git"
+  },
+  "bugs": {
+    "url": "https://github.com/devcodex-labs/extraction-runtime/issues"
+  },
+  "keywords": [
+    "extraction",
+    "parser",
+    "runtime",
+    "text-extraction",
+    "file-parser"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "npm run typecheck",
+    "test": "npm run build && node --test test",
+    "pack:dry": "npm pack --dry-run"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "typescript": "^5.9.0"
+  }
+}
