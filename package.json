@@ -1,5 +1,5 @@
 {
-  "name": "@devcodex-labs/extraction-runtime",
+  "name": "@devcodex/extraction-runtime",
   "version": "1.0.0",
   "description": "URL-based structured OCR provider runtime with a Mistral adapter and compatible legacy parsers.",
   "type": "module",

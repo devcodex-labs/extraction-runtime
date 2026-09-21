@@ -2,7 +2,7 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-`@devcodex-labs/extraction-runtime` extracts structured JSON from document and image URLs using Mistral OCR. It also provides local text parsers for TXT, Markdown, JSON, CSV, and HTML.
+`@devcodex/extraction-runtime` extracts structured JSON from document and image URLs using Mistral OCR. It also provides local text parsers for TXT, Markdown, JSON, CSV, and HTML.
 
 ## Contents
 
@@ -16,7 +16,7 @@
 ## Install
 
 ```sh
-npm install @devcodex-labs/extraction-runtime
+npm install @devcodex/extraction-runtime
 ```
 
 Requires Node.js 20+. The package is ESM-only and ships TypeScript declarations together with the Node.js type definitions they reference. It has no runtime JavaScript dependencies.
@@ -26,7 +26,7 @@ Requires Node.js 20+. The package is ESM-only and ships TypeScript declarations 
 The model catalog is static, needs no credentials, and makes no network requests:
 
 ```js
-import { listExtractionModels } from "@devcodex-labs/extraction-runtime";
+import { listExtractionModels } from "@devcodex/extraction-runtime";
 
 const models = listExtractionModels();
 // [{ provider: "mistral", model: "mistral-ocr-4-1", name: "Mistral OCR 4.1",
@@ -43,7 +43,7 @@ Use the following as your application's `extract.mjs` entry point:
 import {
   extractStructured,
   ExtractionRuntimeError,
-} from "@devcodex-labs/extraction-runtime";
+} from "@devcodex/extraction-runtime";
 
 const apiKey = process.env.MISTRAL_API_KEY;
 const documentUrl = process.env.INVOICE_URL;
@@ -182,7 +182,7 @@ The following deprecated APIs remain compatible. They are separate from structur
 ### Usage
 
 ```ts
-import { extract } from "@devcodex-labs/extraction-runtime";
+import { extract } from "@devcodex/extraction-runtime";
 
 const result = await extract("./README.md");
 
@@ -227,7 +227,7 @@ Detects the likely file type from filename, MIME type, and lightweight content s
 Registers a parser at runtime.
 
 ```ts
-import { registerParser } from "@devcodex-labs/extraction-runtime";
+import { registerParser } from "@devcodex/extraction-runtime";
 
 registerParser({
   id: "custom",

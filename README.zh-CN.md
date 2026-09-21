@@ -2,7 +2,7 @@
 
 [English](README.md) | **简体中文**
 
-`@devcodex-labs/extraction-runtime` 使用 Mistral OCR 从文档和图片 URL 中提取结构化 JSON，也提供 TXT、Markdown、JSON、CSV 和 HTML 的本地文本解析能力。
+`@devcodex/extraction-runtime` 使用 Mistral OCR 从文档和图片 URL 中提取结构化 JSON，也提供 TXT、Markdown、JSON、CSV 和 HTML 的本地文本解析能力。
 
 ## 目录
 
@@ -16,7 +16,7 @@
 ## 安装
 
 ```sh
-npm install @devcodex-labs/extraction-runtime
+npm install @devcodex/extraction-runtime
 ```
 
 要求 Node.js 20+。本包仅支持 ESM，并随包安装其 TypeScript 声明引用的 Node.js 类型定义；没有运行时 JavaScript 依赖。
@@ -26,7 +26,7 @@ npm install @devcodex-labs/extraction-runtime
 模型清单是静态的，无需凭据，不发起网络请求：
 
 ```js
-import { listExtractionModels } from "@devcodex-labs/extraction-runtime";
+import { listExtractionModels } from "@devcodex/extraction-runtime";
 
 const models = listExtractionModels();
 // [{ provider: "mistral", model: "mistral-ocr-4-1", name: "Mistral OCR 4.1",
@@ -43,7 +43,7 @@ const models = listExtractionModels();
 import {
   extractStructured,
   ExtractionRuntimeError,
-} from "@devcodex-labs/extraction-runtime";
+} from "@devcodex/extraction-runtime";
 
 const apiKey = process.env.MISTRAL_API_KEY;
 const documentUrl = process.env.INVOICE_URL;
@@ -182,7 +182,7 @@ Schema 必须是普通 JSON 数据。自定义序列化钩子、访问器、稀�
 ### 使用示例
 
 ```ts
-import { extract } from "@devcodex-labs/extraction-runtime";
+import { extract } from "@devcodex/extraction-runtime";
 
 const result = await extract("./README.md");
 
@@ -227,7 +227,7 @@ const result = await extract(buffer, {
 在运行时注册解析器。
 
 ```ts
-import { registerParser } from "@devcodex-labs/extraction-runtime";
+import { registerParser } from "@devcodex/extraction-runtime";
 
 registerParser({
   id: "custom",

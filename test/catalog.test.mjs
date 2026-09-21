@@ -79,6 +79,7 @@ test("call-level errors preserve standard Error behavior without extra context",
 
 test("package declares Node types and root declarations enforce public contracts", () => {
   const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  assert.equal(packageJson.name, "@devcodex/extraction-runtime");
   assert.equal(packageJson.dependencies?.["@types/node"], "^20.19.0");
   assert.equal(packageJson.devDependencies?.["@types/node"], undefined);
 

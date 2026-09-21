@@ -6,6 +6,7 @@
 - Provide a consumer-only README with an executable JavaScript quickstart.
 - Ship `@types/node` as a package dependency so clean TypeScript consumers can resolve the public legacy declarations.
 - Preserve empty, multiline, spaced, and escaped quoted fields when parsing legacy CSV input.
+- Publish the initial package under the `@devcodex/extraction-runtime` npm scope.
 
 - Reject schema array serialization hooks, validate UTF-8 before response decoding, and isolate input property-read errors without stopping later inputs.
 
