@@ -3,6 +3,8 @@ import { Readable } from "node:stream";
 import test from "node:test";
 import { detectFileType, extract, registerParser } from "../dist/index.js";
 
+// Keep legacy behavior covered through the public root after the module move.
+
 test("extracts markdown headings", async () => {
   const result = await extract(Buffer.from("# Title\n\nHello"), { filename: "note.md" });
 

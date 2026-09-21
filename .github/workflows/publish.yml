@@ -20,15 +20,43 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           registry-url: https://registry.npmjs.org
           cache: npm
+
+      - name: Install OIDC-capable npm
+        run: npm install --global npm@11
+
+      - name: Verify publishing toolchain and tag
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { execFileSync } from 'node:child_process';
+          const atLeast = (actual, minimum) => {
+            const a = actual.trim().replace(/^v/, '').split('.').map(Number);
+            for (let i = 0; i < minimum.length; i++) {
+              if (a[i] !== minimum[i]) return a[i] > minimum[i];
+            }
+            return true;
+          };
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          if (!atLeast(process.versions.node, [22, 14, 0])) throw new Error('Node >=22.14.0 required');
+          if (!atLeast(execFileSync('npm', ['--version'], { encoding: 'utf8' }), [11, 5, 1])) throw new Error('npm >=11.5.1 required');
+          if (process.env.GITHUB_REF_NAME !== `v${pkg.version}`) throw new Error('Tag must match package version');
+          NODE
 
       - name: Install
         run: npm ci
 
       - name: Test
         run: npm test
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check package contents
+        run: npm run pack:dry
 
       - name: Publish to npm
         run: npm publish --access public
