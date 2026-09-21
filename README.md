@@ -19,7 +19,7 @@
 npm install @devcodex-labs/extraction-runtime
 ```
 
-Requires Node.js 20+. The package is ESM-only, includes TypeScript declarations, and has no production dependencies.
+Requires Node.js 20+. The package is ESM-only and ships TypeScript declarations together with the Node.js type definitions they reference. It has no runtime JavaScript dependencies.
 
 ## Structured Extraction
 

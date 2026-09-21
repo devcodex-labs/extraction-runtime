@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import ts from "typescript";
@@ -76,7 +77,11 @@ test("call-level errors preserve standard Error behavior without extra context",
   }
 });
 
-test("root declarations support old types and enforce structured contracts", () => {
+test("package declares Node types and root declarations enforce public contracts", () => {
+  const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  assert.equal(packageJson.dependencies?.["@types/node"], "^20.19.0");
+  assert.equal(packageJson.devDependencies?.["@types/node"], undefined);
+
   const filename = fileURLToPath(new URL("../catalog-type-probe.mts", import.meta.url)).replaceAll("\\", "/");
   const source = `
     import {
@@ -133,7 +138,7 @@ test("root declarations support old types and enforce structured contracts", () 
     moduleResolution: ts.ModuleResolutionKind.NodeNext,
     strict: true,
     noEmit: true,
-    skipLibCheck: true
+    skipLibCheck: false
   };
   const host = ts.createCompilerHost(options);
   const originalGetSourceFile = host.getSourceFile.bind(host);

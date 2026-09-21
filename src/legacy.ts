@@ -213,41 +213,79 @@ function looksLikeHtml(text: string): boolean {
 }
 
 function looksLikeCsv(text: string): boolean {
-  const lines = text.trim().split(/\r?\n/).filter(Boolean);
-  return lines.length > 1 && lines.slice(0, 3).every((line) => parseCsvLine(line).length > 1);
+  const rows = parseCsv(text);
+  return rows.length > 1 && rows.slice(0, 3).every((row) => row.length > 1);
 }
 
-function parseCsvLine(line: string): string[] {
-  const cells: string[] = [];
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
   let current = "";
   let inQuotes = false;
+  let quoted = false;
+  let recordStarted = false;
 
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index];
-    const next = line[index + 1];
+  const pushCell = () => {
+    row.push(quoted ? current : current.trim());
+    current = "";
+    quoted = false;
+  };
 
-    if (char === "\"" && next === "\"") {
-      current += "\"";
-      index += 1;
+  const pushRow = () => {
+    pushCell();
+    rows.push(row);
+    row = [];
+    recordStarted = false;
+  };
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+
+    if (inQuotes) {
+      if (char === "\"" && next === "\"") {
+        current += "\"";
+        index += 1;
+      } else if (char === "\"") {
+        inQuotes = false;
+      } else {
+        current += char;
+      }
       continue;
     }
 
-    if (char === "\"") {
-      inQuotes = !inQuotes;
+    if (char === "\"" && current.length === 0) {
+      inQuotes = true;
+      quoted = true;
+      recordStarted = true;
       continue;
     }
 
-    if (char === "," && !inQuotes) {
-      cells.push(current.trim());
-      current = "";
+    if (char === ",") {
+      pushCell();
+      recordStarted = true;
+      continue;
+    }
+
+    if (char === "\r" || char === "\n") {
+      if (char === "\r" && next === "\n") {
+        index += 1;
+      }
+      if (recordStarted || current.length > 0 || row.length > 0) {
+        pushRow();
+      }
       continue;
     }
 
     current += char;
+    recordStarted = true;
   }
 
-  cells.push(current.trim());
-  return cells;
+  if (recordStarted || current.length > 0 || row.length > 0) {
+    pushRow();
+  }
+
+  return rows;
 }
 
 function stripHtml(html: string): string {
@@ -359,7 +397,7 @@ registerParser({
   mimeTypes: ["text/csv"],
   matches: ({ text }) => looksLikeCsv(text),
   parse(context) {
-    const rows = context.text.trim().split(/\r?\n/).filter(Boolean).map(parseCsvLine);
+    const rows = parseCsv(context.text);
     const headers = rows[0] ?? [];
     const text = rows.map((row) => row.join("\t")).join("\n");
 

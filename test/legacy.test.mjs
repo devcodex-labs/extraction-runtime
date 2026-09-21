@@ -27,6 +27,38 @@ test("extracts csv metadata", async () => {
   assert.equal(result.text, "name\tage\nAda\t36");
 });
 
+test("preserves quoted CSV fields across records", async () => {
+  const cases = [
+    {
+      input: "name,note\nAda,\"\"",
+      expectedText: "name\tnote\nAda\t"
+    },
+    {
+      input: "name,note\nAda,\"hello\nworld\"",
+      expectedText: "name\tnote\nAda\thello\nworld"
+    },
+    {
+      input: "name,note\nAda,\"  keep  \"",
+      expectedText: "name\tnote\nAda\t  keep  "
+    },
+    {
+      input: "name,note\r\nAda,\"say \"\"hello\"\"\"",
+      expectedText: "name\tnote\nAda\tsay \"hello\""
+    }
+  ];
+
+  for (const { input, expectedText } of cases) {
+    const result = await extract(Buffer.from(input), { filename: "people.csv" });
+
+    assert.equal(result.metadata.rows, 2);
+    assert.deepEqual(result.metadata.headers, ["name", "note"]);
+    assert.equal(result.text, expectedText);
+  }
+
+  const detected = await detectFileType(Buffer.from(cases[1].input));
+  assert.equal(detected.parserId, "csv");
+});
+
 test("extracts html text", async () => {
   const result = await extract(Buffer.from("<html><body><h1>Hello</h1><script>no</script></body></html>"), {
     filename: "page.html"

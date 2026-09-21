@@ -19,7 +19,7 @@
 npm install @devcodex-labs/extraction-runtime
 ```
 
-要求 Node.js 20+。本包仅支持 ESM，包含 TypeScript 类型声明，无生产依赖。
+要求 Node.js 20+。本包仅支持 ESM，并随包安装其 TypeScript 声明引用的 Node.js 类型定义；没有运行时 JavaScript 依赖。
 
 ## 结构化提取
 
