@@ -104,6 +104,8 @@ node extract.mjs
 
 图片使用 `kind: "image"` 和 HTTP(S) 图片 URL。批量提取只需在 `inputs` 中传入多项，无需单独的批量方法。文件可访问性、支持的文档格式及账号限制由 Mistral 判断，不由本地文件检查决定。
 
+对于 `kind: "document"`，适配器发送 `image_limit: 0` 与 `include_image_base64: false`，不返回内嵌图片；这也避免了 DOCX 内嵌图片不能以非 base64 形式返回的问题。
+
 在 TypeScript 中，可以使用 `extractStructured<Invoice>(request)` 描述预期的数据类型。它不会校验提取字段；使用结果前仍需执行你的业务校验。
 
 ## 配置

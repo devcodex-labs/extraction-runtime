@@ -1,8 +1,13 @@
 # Changelog
 
-## 1.0.0 (Unreleased)
+## 1.0.1 (2026-09-29)
 
-- Establish 1.0.0 as the initial stable release version; it has not been published.
+- Disable embedded-image extraction for document OCR requests with `image_limit: 0`, while leaving image URL requests unchanged.
+- Document the document-image response behavior in English and Simplified Chinese.
+
+## 1.0.0 (2026-09-21)
+
+- Establish 1.0.0 as the initial stable release version.
 - Provide a consumer-only README with an executable JavaScript quickstart.
 - Ship `@types/node` as a package dependency so clean TypeScript consumers can resolve the public legacy declarations.
 - Preserve empty, multiline, spaced, and escaped quoted fields when parsing legacy CSV input.
@@ -16,7 +21,7 @@
 - Preserve `extract`, `detectFileType`, and `registerParser` as deprecated, compatible legacy APIs.
 - Do not perform local business-schema validation, repair, or partial-result classification.
 - Add opt-in document/image live verification, Node 20/22/24 CI, and Node 22/npm 11 OIDC publishing checks.
-- The pre-review candidate passed document and image live verification on 2026-09-21; review fixes were validated offline. Final-candidate checks, trusted-publisher verification and separate release authorization remain required.
+- The final candidate passed document and image live verification, trusted-publisher verification, and public consumer installation checks on 2026-09-21.
 
 ## 0.1.0
 

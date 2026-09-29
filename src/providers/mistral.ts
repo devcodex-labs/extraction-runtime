@@ -18,6 +18,8 @@ export function createMistralAdapter(transport: RequestOnce = requestOnce): Prov
           type: "json_schema", json_schema: { name: "extraction_result", strict: true, schema: context.schema },
         },
         include_image_base64: false,
+        // Document extraction does not consume embedded images, so keep them out of the response.
+        ...(input.kind === "document" ? { image_limit: 0 } : {}),
         include_blocks: false,
         ...(context.prompt === undefined ? {} : { document_annotation_prompt: context.prompt }),
         ...(context.providerOptions.pages === undefined ? {} : { pages: context.providerOptions.pages }),

@@ -104,6 +104,8 @@ node extract.mjs
 
 For images use `kind: "image"` and an HTTP(S) image URL. For batches supply multiple entries in `inputs`; no separate batch method is needed. File accessibility, supported document formats and account limits are enforced by Mistral, not local file inspection.
 
+For `kind: "document"`, the adapter sends `image_limit: 0` and `include_image_base64: false`; embedded images are excluded from the OCR response. This also permits DOCX documents whose embedded images cannot be returned in non-base64 form.
+
 In TypeScript, `extractStructured<Invoice>(request)` can describe the expected data shape. It does not validate extracted fields; apply your own business validation before relying on them.
 
 ## Configuration

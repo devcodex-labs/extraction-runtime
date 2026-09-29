@@ -20,11 +20,12 @@ test("exact document/image mapping, optional omission, key and schema preservati
   assert.deepEqual(seen[0], {
     url: "https://api.mistral.ai/v1/ocr",
     headers: { Authorization: "Bearer  test ", "Content-Type": "application/json", Accept: "application/json", "Accept-Encoding": "identity" },
-    body: { model: req.model, document: { type: "document_url", document_url: req.inputs[0].url }, document_annotation_format: { type: "json_schema", json_schema: { name: "extraction_result", strict: true, schema: req.schema } }, include_image_base64: false, include_blocks: false, document_annotation_prompt: "Extract title", pages: [2, 0, 2] },
+    body: { model: req.model, document: { type: "document_url", document_url: req.inputs[0].url }, document_annotation_format: { type: "json_schema", json_schema: { name: "extraction_result", strict: true, schema: req.schema } }, include_image_base64: false, image_limit: 0, include_blocks: false, document_annotation_prompt: "Extract title", pages: [2, 0, 2] },
   });
   const output = await run({ ...req, baseUrl: "https://gateway.example/mistral///", inputs: [{ ...req.inputs[0], kind: "image" }] });
   assert.equal(seen[1].url, "https://gateway.example/mistral/v1/ocr");
   assert.deepEqual(seen[1].body.document, { type: "image_url", image_url: req.inputs[0].url });
+  assert.equal("image_limit" in seen[1].body, false);
   assert.equal("pages" in seen[1].body, false); assert.equal("document_annotation_prompt" in seen[1].body, false);
   assert.deepEqual(output.items[0].data, {}); assert.equal("pages" in output.items[0], false);
   await run({ ...req, providerOptions: { pages: "0,2-4" } });
