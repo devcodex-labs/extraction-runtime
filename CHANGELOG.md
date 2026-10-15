@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2 (2026-10-15)
+
+- Return bounded, sanitized upstream HTTP error details in optional `providerError`, and safe `providerRequestId` values when available.
+- Preserve existing runtime codes/messages, HTTP status classification, deadlines and zero-retry behavior; cap error body reads at 16 KiB.
+
 ## 1.0.1 (2026-09-29)
 
 - Disable embedded-image extraction for document OCR requests with `image_limit: 0`, while leaving image URL requests unchanged.

@@ -17,7 +17,7 @@ test("annotation gates parse exactly once, never repair or validate business dat
   assert.deepEqual(result.items[0].data, { extra: [], secret: "secret" });
 });
 
-test("explicit incomplete wins, safe errors exclude adapter details and retain caller id", async () => {
+test("explicit incomplete wins, safe errors exclude raw messages and unsafe IDs and retain caller id", async () => {
   const r = request(); r.inputs[0].id = r.inputs[0].url;
   const outputs = [{ kind: "incomplete", reason: "provider-declared-incomplete", annotation: "{}" }, ...["UNSUPPORTED_FILE", "FILE_LIMIT_EXCEEDED", "RATE_LIMITED"].map(code => ({ kind: "error", error: { code, message: "secret", providerRequestId: r.inputs[0].url, providerStatus: 429 } }))];
   for (const output of outputs) {

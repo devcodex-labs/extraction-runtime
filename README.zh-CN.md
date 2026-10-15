@@ -74,7 +74,7 @@ try {
       // 使用提取值前，请先校验业务规则。
       console.log(item.index, item.id, item.data);
     } else {
-      console.error(item.index, item.error.code, item.error.message);
+      console.error(item.index, item.error.code, item.error.providerError?.message ?? item.error.message);
     }
   }
 } catch (error) {
@@ -166,7 +166,11 @@ Schema 必须是普通 JSON 数据。自定义序列化钩子、访问器、稀�
 | `UNKNOWN_PROVIDER_ERROR` | 5xx、非法响应外层结构、非字符串 annotation、不支持的编码或其他协议错误 |
 | `UNSUPPORTED_FILE` / `FILE_LIMIT_EXCEEDED` | 预留错误码；本版本将 Mistral HTTP 413/415 映射为 `PROVIDER_REJECTED` |
 
-`providerStatus` 可选，仅来源于 HTTP 状态码。`providerRequestId` 是预留字段，本版本不返回。错误使用固定消息，不暴露原始响应、密钥、URL、Schema、prompt 或底层异常。调用方的 `id` 和业务 `data` 不会被脱敏，请避免自行记录其中的敏感值。
+`code` 和 `message` 保持稳定的 runtime 错误分类和固定消息。HTTP 失败时，可选的 `providerError` 返回上游可用的 `message`、`type`、`code` 和 `param` 字符串。校验错误中的 `detail` 字符串或数组内的 `msg` 也会归入 `providerError.message`。其他响应字段和原始正文不返回。这些信息用于解释具体原因，不改变 runtime 错误码。
+
+`providerStatus` 仅来源于 HTTP 状态码。可选的 `providerRequestId` 从响应的 `x-request-id` 或 `request-id` 取得，仅返回通过校验的短标识，不保证上游一定提供。诊断字段会移除已知凭据、输入 URL/query 值，以及 URL/Bearer 回显；单字段最多 1,024 字符，请求 ID 最多 256 字符。无法可靠识别上游文本中的未知秘密，向最终用户转发前请按业务需求检查。调用方的 `id` 和业务 `data` 不会被脱敏。
+
+错误正文最多读取 16 KiB。正文为空、格式非法、超限、编码不支持或中途断流时，回退到固定消息和 HTTP 状态，并保留可安全取得的请求 ID。逐项 deadline 仍优先，超时返回 `TIMEOUT`。不返回 stack 或底层异常对象。
 
 ## 运行边界
 
@@ -175,7 +179,7 @@ Schema 必须是普通 JSON 数据。自定义序列化钩子、访问器、稀�
 - 仅对 `document_annotation` 执行一次解析，得到对象 `data`。不做本地业务 Schema 校验、字段类型转换、默认值填充、置信度或证据核验，也没有 `partial` 状态。泛型只描述预期，不保证数据已通过校验。
 - runtime 将文件 URL 发送给服务商，不自行下载文件、不转换 Office 文件；`extractStructured` 不接受本地路径或字节内容。
 - 截止时间覆盖单次网络交互、完整响应体和解析检查。到期会销毁本地流。同步 JSON 解析无法被抢占，但超时结果不会判定为成功。本地取消不会撤销服务商处理或费用。
-- 上游响应中的 OCR 页与 Markdown 会被接收，但解包后不向调用方暴露或保留其引用。没有响应大小上限；峰值内存包括完整响应、解析临时对象和累计批量数据。
+- 上游响应中的 OCR 页与 Markdown 会被接收，但解包后不向调用方暴露或保留其引用。成功 OCR 响应没有大小上限；错误正文上限为 16 KiB。峰值内存包括完整成功响应、解析临时对象和累计批量数据。
 
 ## 本地文本提取
 

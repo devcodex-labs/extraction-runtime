@@ -74,7 +74,7 @@ try {
       // Validate business rules before using the extracted value.
       console.log(item.index, item.id, item.data);
     } else {
-      console.error(item.index, item.error.code, item.error.message);
+      console.error(item.index, item.error.code, item.error.providerError?.message ?? item.error.message);
     }
   }
 } catch (error) {
@@ -166,7 +166,11 @@ Call-level failures reject with `ExtractionRuntimeError` before any request: `IN
 | `UNKNOWN_PROVIDER_ERROR` | 5xx, invalid envelope, nonstring annotation, unsupported encoding or other protocol failure |
 | `UNSUPPORTED_FILE` / `FILE_LIMIT_EXCEEDED` | Reserved codes; this version reports Mistral HTTP 413/415 as `PROVIDER_REJECTED` |
 
-`providerStatus` is optional and comes only from HTTP status. `providerRequestId` is reserved but omitted in this version. Errors use fixed messages and never expose raw responses, keys, URLs, schema, prompt, or underlying causes. Caller `id` and business `data` are deliberately not sanitized; avoid logging sensitive values yourself.
+`code` and `message` remain stable runtime classifications and messages. For HTTP failures, optional `providerError` contains the upstream `message`, `type`, `code`, and `param` strings when available. Validation responses may also supply a `detail` string or an array of `msg` entries, exposed as `providerError.message`. Other response fields and raw bodies are omitted. These diagnostics describe the provider failure; they do not change the runtime error code.
+
+`providerStatus` comes only from HTTP status. Optional `providerRequestId` is taken from `x-request-id` or `request-id` when the response supplies a safe token; its presence is not guaranteed. Diagnostics remove known credentials, input URLs/query values and URL/Bearer echoes. Strings are limited to 1,024 characters and request IDs to 256 characters. Unknown secrets in provider text cannot be recognized reliably; review diagnostics before forwarding them to end users. Caller `id` and business `data` are deliberately not sanitized.
+
+Error bodies are read up to 16 KiB. Empty, malformed, oversized, unsupported-encoding or interrupted error bodies fall back to the runtime message and HTTP status, with a safe request ID if available. The item deadline still takes precedence and returns `TIMEOUT`. Stack traces and underlying exception objects are not returned.
 
 ## Runtime Boundaries
 
@@ -175,7 +179,7 @@ Call-level failures reject with `ExtractionRuntimeError` before any request: `IN
 - Only `document_annotation` is parsed, exactly once, into object `data`. There is no local business-schema validation, field coercion, default filling, confidence, evidence checking, or `partial` status. A generic type describes your expectation, not a validation guarantee.
 - The runtime sends file URLs to the provider; it does not fetch files itself, transform Office files, or accept local paths/bytes through `extractStructured`.
 - Deadlines cover the single network exchange, complete response body, and parse checks. Expiry destroys local streams. Synchronous JSON parsing cannot be preempted, but an overdue result cannot become success. Local cancellation does not undo provider processing or charges.
-- OCR pages/Markdown are received as part of the upstream response but are not exposed or retained after unpacking. There is no response-size cap; peak memory includes the full response, parsing temporaries, and accumulated batch data.
+- OCR pages/Markdown are received as part of the upstream response but are not exposed or retained after unpacking. Successful OCR responses have no size cap; error bodies have a 16 KiB limit. Peak memory includes the full successful response, parsing temporaries, and accumulated batch data.
 
 ## Local Text Extraction
 

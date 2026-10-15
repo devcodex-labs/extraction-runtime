@@ -89,7 +89,7 @@ test("package declares Node types and root declarations enforce public contracts
       extract, detectFileType, registerParser, listExtractionModels, ExtractionRuntimeError, extractStructured,
       type ExtractOptions, type ExtractionInput, type ExtractionResult, type ExtractionParser,
       type StructuredExtractionRequest, type StructuredExtractionResponse,
-      type JsonObject, type JsonSchemaObject, type ItemErrorCode
+      type JsonObject, type JsonSchemaObject, type ItemErrorCode, type ProviderErrorDetails
     } from "./dist/index.js";
     const input: ExtractionInput = new Uint8Array();
     const options: ExtractOptions = { filename: "note.txt" };
@@ -114,6 +114,13 @@ test("package declares Node types and root declarations enforce public contracts
         item.error;
       } else {
         const code: ItemErrorCode = item.error.code;
+        const details: ProviderErrorDetails | undefined = item.error.providerError;
+        const message: string | undefined = details?.message;
+        const requestId: string | undefined = item.error.providerRequestId;
+        // @ts-expect-error diagnostics are readonly
+        if (details) details.message = "changed";
+        // @ts-expect-error diagnostics never include an arbitrary raw body
+        details?.body;
         // @ts-expect-error failure has no business data
         item.data;
       }

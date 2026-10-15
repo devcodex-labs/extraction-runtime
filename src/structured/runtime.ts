@@ -1,4 +1,5 @@
 import { TransportError, withDeadline } from "../internal/http.js";
+import { diagnosticSecrets, safeDiagnostics } from "../internal/diagnostics.js";
 import type { ProviderAdapter } from "../providers/contracts.js";
 import { providerRegistry } from "../providers/mistral.js";
 import type { ItemErrorCode, JsonObject, ProviderId, StructuredExtractionItem, StructuredExtractionItemError, StructuredExtractionRequest, StructuredExtractionResponse } from "./contracts.js";
@@ -28,6 +29,11 @@ function safeError(code: ItemErrorCode, status?: number): StructuredExtractionIt
 export function createRuntime(registry: ReadonlyMap<ProviderId, ProviderAdapter>) {
   return async function extractStructured<TData extends object = JsonObject>(request: StructuredExtractionRequest): Promise<StructuredExtractionResponse<TData>> {
     const { adapter, context, slots } = normalizeRequest(request, registry);
+    const secrets = diagnosticSecrets([
+      context.headers.Authorization ?? "", context.headers.Authorization?.replace(/^Bearer /, "") ?? "",
+      context.prompt ?? "", JSON.stringify(context.schema),
+      ...slots.flatMap(slot => slot.input ? [slot.input.url] : []),
+    ]);
     const items: StructuredExtractionItem<TData>[] = [];
     for (const slot of slots) {
       const identity = { index: slot.index, ...(slot.id === undefined ? {} : { id: slot.id }), provider: adapter.provider, model: context.model };
@@ -41,7 +47,9 @@ export function createRuntime(registry: ReadonlyMap<ProviderId, ProviderAdapter>
           scope.checkDeadline();
           const error = (code: ItemErrorCode, status?: number): StructuredExtractionItem<TData> => ({ ...identity, status: "error", error: safeError(code, status) });
           if (output.kind === "incomplete") return error("PROVIDER_RESPONSE_INCOMPLETE");
-          if (output.kind === "error") return error(output.error.code, output.error.providerStatus);
+          if (output.kind === "error") return { ...identity, status: "error" as const, error: {
+            ...safeError(output.error.code, output.error.providerStatus), ...safeDiagnostics(output.error, secrets),
+          } };
           if (output.annotation === null || output.annotation === undefined) return error("STRUCTURED_OUTPUT_MISSING");
           if (typeof output.annotation !== "string") return error("UNKNOWN_PROVIDER_ERROR");
           let data: unknown;

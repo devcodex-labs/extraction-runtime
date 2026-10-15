@@ -40,7 +40,7 @@ export async function withDeadline<T>(timeoutMs: number, work: (scope: DeadlineS
   } finally { clearTimeout(timer); }
 }
 
-export interface HttpResponseSnapshot { readonly status: number; readonly bodyText?: string; }
+export interface HttpResponseSnapshot { readonly status: number; readonly bodyText?: string; readonly requestId?: string; }
 export type RequestOnce = (endpoint: URL, headers: Readonly<Record<string, string>>, body: string, scope: DeadlineScope) => Promise<HttpResponseSnapshot>;
 
 /** One ClientRequest, no redirects/retries; settle only after owned streams close. */
@@ -53,6 +53,7 @@ export const requestOnce: RequestOnce = (endpoint, headers, body, scope) => new 
   let failure: TransportError | undefined;
   let settled = false;
   const chunks: Buffer[] = [];
+  let errorBytes = 0;
   const finish = () => {
     if (settled || !requestClosed || !responseClosed) return;
     settled = true;
@@ -79,29 +80,37 @@ export const requestOnce: RequestOnce = (endpoint, headers, body, scope) => new 
       incoming.on("aborted", () => { if (!result) stop("NETWORK_ERROR"); });
       incoming.on("close", () => { responseClosed = true; finish(); });
       const status = incoming.statusCode ?? 0;
-      if (status < 200 || status >= 300) {
-        result = { status };
-        incoming.destroy();
-        return;
-      }
+      const isError = status < 200 || status >= 300;
+      const requestId = incoming.headers["x-request-id"] ?? incoming.headers["request-id"];
+      const metadata = { status, ...(typeof requestId === "string" ? { requestId } : {}) };
+      // HTTP classification survives missing/malformed diagnostics and stream failures.
+      if (isError) result = metadata;
       const encoding = incoming.headers["content-encoding"];
       if (encoding !== undefined && encoding.trim().toLowerCase() !== "identity") {
-        stop("UNKNOWN_PROVIDER_ERROR");
+        if (isError) incoming.destroy();
+        else stop("UNKNOWN_PROVIDER_ERROR");
         return;
       }
-      incoming.on("data", (chunk: Buffer) => chunks.push(chunk));
+      incoming.on("data", (chunk: Buffer) => {
+        if (isError && (errorBytes += chunk.length) > 16_384) {
+          chunks.length = 0;
+          incoming.destroy();
+          return;
+        }
+        chunks.push(chunk);
+      });
       incoming.on("end", () => {
-        if (!incoming.complete) { stop("NETWORK_ERROR"); return; }
+        if (!incoming.complete) { if (!isError) stop("NETWORK_ERROR"); return; }
         try {
           const body = Buffer.concat(chunks);
           chunks.length = 0;
           // Buffer decoding otherwise replaces corrupt bytes with business-visible U+FFFD.
-          if (!isUtf8(body)) { stop("UNKNOWN_PROVIDER_ERROR"); return; }
-          result = { status, bodyText: body.toString("utf8") };
-        } catch { stop("UNKNOWN_PROVIDER_ERROR"); }
+          if (!isUtf8(body)) { if (!isError) stop("UNKNOWN_PROVIDER_ERROR"); return; }
+          result = { ...metadata, bodyText: body.toString("utf8") };
+        } catch { if (!isError) stop("UNKNOWN_PROVIDER_ERROR"); }
       });
     });
-    request.on("error", () => stop("NETWORK_ERROR"));
+    request.on("error", () => { if (!result) stop("NETWORK_ERROR"); });
     request.on("close", () => { requestClosed = true; finish(); });
     scope.signal.addEventListener("abort", abort, { once: true });
     if (scope.signal.aborted) abort();

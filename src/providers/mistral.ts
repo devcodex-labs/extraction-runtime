@@ -1,5 +1,6 @@
 import { requestOnce } from "../internal/http.js";
 import type { RequestOnce } from "../internal/http.js";
+import { diagnosticSecrets, safeDiagnostics } from "../internal/diagnostics.js";
 import type { ItemErrorCode } from "../structured/contracts.js";
 import { isObject } from "../structured/validation.js";
 import type { ProviderAdapter } from "./contracts.js";
@@ -31,7 +32,27 @@ export function createMistralAdapter(transport: RequestOnce = requestOnce): Prov
         const code: ItemErrorCode = [401, 403].includes(response.status) ? "AUTHENTICATION_FAILED"
           : response.status === 429 ? "RATE_LIMITED"
           : response.status >= 300 && response.status < 500 ? "PROVIDER_REJECTED" : "UNKNOWN_PROVIDER_ERROR";
-        return { kind: "error", error: { code, message: "Provider request failed.", providerStatus: response.status } };
+        let details: Record<string, unknown> = {};
+        try {
+          const parsed: unknown = JSON.parse(response.bodyText ?? "");
+          if (isObject(parsed)) {
+            details = parsed;
+            // Validation gateways may return detail strings or Pydantic msg entries.
+            if (typeof details.message !== "string") {
+              const detail = details.detail;
+              details = { ...details, message: typeof detail === "string" ? detail
+                : Array.isArray(detail) ? detail.slice(0, 8).filter(isObject).map(entry => entry.msg).filter(value => typeof value === "string").join("; ") : undefined };
+            }
+          }
+        } catch { /* HTTP status remains authoritative when diagnostics cannot be parsed. */ }
+        const secrets = diagnosticSecrets([input.url, context.headers.Authorization ?? "", context.headers.Authorization?.replace(/^Bearer /, "") ?? ""]);
+        const diagnostic = safeDiagnostics({ providerRequestId: response.requestId, providerError: {
+          ...(typeof details.message === "string" ? { message: details.message } : {}),
+          ...(typeof details.type === "string" ? { type: details.type } : {}),
+          ...(typeof details.code === "string" ? { code: details.code } : {}),
+          ...(typeof details.param === "string" ? { param: details.param } : {}),
+        } }, secrets);
+        return { kind: "error", error: { code, message: "Provider request failed.", providerStatus: response.status, ...diagnostic } };
       }
       let envelope: unknown;
       try { envelope = JSON.parse(response.bodyText ?? ""); }

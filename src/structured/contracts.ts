@@ -80,6 +80,15 @@ export interface StructuredExtractionItemError {
   readonly message: string;
   readonly providerStatus?: number;
   readonly providerRequestId?: string;
+  readonly providerError?: ProviderErrorDetails;
+}
+
+/** Bounded, sanitized upstream diagnostics; never a raw response or exception. */
+export interface ProviderErrorDetails {
+  readonly message?: string;
+  readonly type?: string;
+  readonly code?: string;
+  readonly param?: string;
 }
 
 export type CallErrorCode =
